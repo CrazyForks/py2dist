@@ -262,3 +262,25 @@ compile_dir(
     nthread=4
 )
 ```
+
+## Others
+
+### Project Origin
+
+Sometimes, you need to release a Python project, but you don't want customers to modify the source code themselves and cause issues. Therefore, you need a simple way to protect the source code files.
+
+Because the philosophy of Python is to distribute source code, CPython does not provide real compilation functionality. However, many people have worked in this area.
+
+I've compared several popular projects:
+- [`Nuitka`](https://nuitka.net/) performs real compilation by translating Python to C through special optimizations. However, it often requires extra adaptation for certain third-party packages, and when there are many packages, compilation can be very time-consuming. I used it for a while but eventually gave up.
+- [`Pyarmor`](https://github.com/dashingsoft/pyarmor) specializes in obfuscation and encryption. It works as expected, but I didn't choose it because I don't need many of its obfuscation and encryption features, and it's commercial software that requires purchasing a machine license.
+- [`Cython`](https://cython.org/) is fully compatible with modern Python versions and ecosystems. Although compiling pure `.py` code does not truly translate it into C, it is sufficient for the general purpose of protecting source code from being modified.
+
+I've used this workflow for a while without any issues, so I developed this project as a package for easier installation and release. 😊
+
+This project does not involve encryption or obfuscation; you can optimize it yourself if you need such features.
+
+### Thanks
+
+- [Cython](https://cython.org/) for empowering the combination of Python and C.
+- This project is based on [`py2sec`](https://github.com/cckuailong/py2sec) scripts, and has been optimized and improved on top of it. Thanks to the author of this excellent project.
