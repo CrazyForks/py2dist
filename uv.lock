@@ -54,7 +54,7 @@ wheels = [
 
 [[package]]
 name = "py2dist"
-version = "0.1.3"
+version = "0.1.7"
 source = { editable = "." }
 dependencies = [
     { name = "cython" },

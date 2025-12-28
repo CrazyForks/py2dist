@@ -4,16 +4,19 @@ from setuptools import Extension, setup
 from Cython.Build import cythonize
 from Cython.Distutils import build_ext
 
-source_root = sys.argv[1]
+work_dir = sys.argv[1]
 sys.argv = [sys.argv[0]] + sys.argv[2:]
 
 extensions = []
-full_filenames = %s
+rel_filenames = %s
+source_root = %s
 
-for full_filename in full_filenames:
-    filename = full_filename[:-3].replace(os.path.sep, '.')
-    abs_path = os.path.join(source_root, full_filename)
-    extension = Extension(filename, [abs_path])
+old_cwd = os.getcwd()
+os.chdir(source_root)
+
+for rel_filename in rel_filenames:
+    mod_name = rel_filename[:-3].replace(os.path.sep, '.')
+    extension = Extension(mod_name, [rel_filename])
     extension.cython_c_in_temp = True
     extensions.append(extension)
 
@@ -29,9 +32,11 @@ setup(
     ext_modules=cythonize(
         extensions,
         nthreads=%s,
-        build_dir=".py2dist/build_c",
+        build_dir=os.path.join(work_dir, ".py2dist/build_c"),
         quiet=%s,
         compiler_directives=compiler_directives
     )
 )
+
+os.chdir(old_cwd)
 '''

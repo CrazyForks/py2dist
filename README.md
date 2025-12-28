@@ -8,6 +8,7 @@ py2dist is a tool that uses Cython to compile Python source code into binary ext
 
 - Support Linux, Mac, Windows platforms.
 - Support compiling single `.py` files or entire directories into binary files.
+- Support compiling additional `.py` files to `.pyc` bytecode (for files that cannot be compiled by Cython).
 - Preserve directory structure, automatically copy other files to the output directory.
 - Support excluding specific files or directories.
 - Automatically detect and use `ccache` to accelerate compilation.
@@ -168,11 +169,11 @@ At this point, if we check the file structure inside the image, it looks like th
 /app/
 ├── run.py
 ├── server/
-│   ├── __init__.py
+│   ├── __init__.pyc
 │   ├── main.so
 │   ├── utils.so
 │   ├── router/
-│   │   ├── __init__.py
+│   │   ├── __init__.pyc
 │   │   └── user.so
 │   ├── static/
 │   │   └── image.png
@@ -245,6 +246,30 @@ Arguments:
 - `-q, --quiet`: Quiet mode.
 - `-r, --release`: Release mode (cleans up temporary build files).
 - `-c, --ccache`: Use ccache (auto-detect by default, or specify path).
+- `-b, --bytecode`: Compile `.py` files to `.pyc` bytecode using compileall (file or directory).
+
+### Bytecode Compilation (-b)
+
+The `-b` option compiles Python files to `.pyc` bytecode instead of binary `.so`/`.pyd` files. This is useful for files that cannot be compiled by Cython.
+
+**Note:** `__init__.py` files are automatically compiled to `.pyc` by default. You don't need to use `-b` for them.
+
+**Use Case:** Some libraries like `fastmcp` use source file information at runtime (e.g., for introspection or documentation generation). These files cannot be compiled to `.so` but can be compiled to `.pyc` using the `-b` option.
+
+Examples:
+
+```bash
+# Compile a single file to bytecode
+python3 -m py2dist -b mymodule/mcp_server.py -o dist
+
+# Compile a directory to bytecode
+python3 -m py2dist -b mymodule/mcp_server/ -o dist
+
+# Combine with Cython compilation: compile most files to .so, but compile MCP service files to .pyc
+python3 -m py2dist -d myproject -m "myproject/mcp_server/" -b myproject/mcp_server/ -o dist
+```
+
+When used with `-d`, the `-b` option runs after Cython compilation and converts the specified `.py` files in the output directory to `.pyc`, removing the original `.py` files.
 
 ### Python API
 

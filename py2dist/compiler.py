@@ -1,5 +1,7 @@
+import compileall
 import os
 import platform
+import py_compile
 import shutil
 import subprocess
 import tempfile
@@ -146,9 +148,19 @@ class Compiler:
         return list(set(all_files) - set(compile_files))
 
     def _generate_build_script(self, files: list):
-        files_repr = repr(files)
+        if self.options.source_dir:
+            source_root = os.path.dirname(os.path.abspath(self.options.source_dir))
+            source_dir_name = os.path.basename(os.path.abspath(self.options.source_dir))
+            rel_files = [os.path.join(source_dir_name, os.path.relpath(f, self.options.source_dir)) for f in files]
+        else:
+            source_root = os.path.dirname(os.path.abspath(files[0]))
+            rel_files = [os.path.basename(f) for f in files]
+
+        files_repr = repr(rel_files)
+        source_root_repr = repr(source_root)
         content = BUILD_SCRIPT_TEMPLATE % (
             files_repr,
+            source_root_repr,
             self.options.python_version,
             self.options.nthread,
             self.options.quiet,
@@ -228,7 +240,28 @@ class Compiler:
         for non_compile_file in self._get_non_compile_files(compile_files):
             dest_path = os.path.join(output_dir, non_compile_file)
             make_dirs(os.path.dirname(dest_path))
-            shutil.copyfile(os.path.join(self._work_dir, non_compile_file), dest_path)
+            src_path = os.path.join(self._work_dir, non_compile_file)
+            if non_compile_file.endswith("__init__.py"):
+                self._compile_init_to_pyc(src_path, dest_path)
+            else:
+                shutil.copyfile(src_path, dest_path)
+
+    def _compile_init_to_pyc(self, src_path: str, dest_path: str):
+        py_compile.compile(src_path, doraise=True)
+        cache_dir = os.path.join(os.path.dirname(src_path), '__pycache__')
+        base_name = os.path.splitext(os.path.basename(src_path))[0]
+        if os.path.isdir(cache_dir):
+            for f in os.listdir(cache_dir):
+                if f.startswith(base_name) and f.endswith('.pyc'):
+                    pyc_src = os.path.join(cache_dir, f)
+                    pyc_dest = os.path.splitext(dest_path)[0] + '.pyc'
+                    shutil.copy(pyc_src, pyc_dest)
+                    os.remove(pyc_src)
+                    break
+            try:
+                os.rmdir(cache_dir)
+            except OSError:
+                pass
 
     def compile(self) -> str:
         compile_files = self._get_compile_files()
@@ -297,3 +330,101 @@ def compile_dir(
         release=release,
     )
     return Compiler(opts).compile()
+
+
+def compile_to_bytecode(target: str, output_dir: str, quiet: bool = False, in_place: bool = False) -> list:
+    compiled_files = []
+    target = os.path.abspath(target)
+    output_dir = os.path.abspath(output_dir)
+
+    if in_place:
+        if os.path.isfile(target):
+            if not target.endswith('.py'):
+                raise ValueError("Bytecode target must be a .py file or directory")
+            base_name = os.path.splitext(os.path.basename(target))[0]
+            py_compile.compile(target, doraise=True)
+            cache_dir = os.path.join(os.path.dirname(target), '__pycache__')
+            if os.path.isdir(cache_dir):
+                for f in os.listdir(cache_dir):
+                    if f.startswith(base_name) and f.endswith('.pyc'):
+                        src = os.path.join(cache_dir, f)
+                        dest = os.path.join(os.path.dirname(target), base_name + '.pyc')
+                        shutil.move(src, dest)
+                        compiled_files.append(dest)
+                        os.remove(target)
+                        break
+                try:
+                    os.rmdir(cache_dir)
+                except OSError:
+                    pass
+        elif os.path.isdir(target):
+            success = compileall.compile_dir(target, force=True, quiet=2 if quiet else 0)
+            if not success:
+                raise RuntimeError("Bytecode compilation failed")
+            for root, dirs, files in os.walk(target):
+                if '__pycache__' in dirs:
+                    cache_dir = os.path.join(root, '__pycache__')
+                    for f in os.listdir(cache_dir):
+                        if f.endswith('.pyc'):
+                            src = os.path.join(cache_dir, f)
+                            parts = f.rsplit('.', 2)
+                            simple_name = parts[0] + '.pyc'
+                            dest = os.path.join(root, simple_name)
+                            shutil.move(src, dest)
+                            compiled_files.append(dest)
+                            py_file = os.path.join(root, parts[0] + '.py')
+                            if os.path.exists(py_file):
+                                os.remove(py_file)
+                    try:
+                        os.rmdir(cache_dir)
+                    except OSError:
+                        pass
+        else:
+            raise FileNotFoundError(f"Target not found: {target}")
+    else:
+        if os.path.isfile(target):
+            if not target.endswith('.py'):
+                raise ValueError("Bytecode target must be a .py file or directory")
+            base_name = os.path.splitext(os.path.basename(target))[0]
+            make_dirs(output_dir)
+            py_compile.compile(target, doraise=True)
+            cache_dir = os.path.join(os.path.dirname(target), '__pycache__')
+            if os.path.isdir(cache_dir):
+                for f in os.listdir(cache_dir):
+                    if f.startswith(base_name) and f.endswith('.pyc'):
+                        src = os.path.join(cache_dir, f)
+                        dest = os.path.join(output_dir, base_name + '.pyc')
+                        shutil.copy(src, dest)
+                        compiled_files.append(dest)
+                        os.remove(src)
+                        break
+
+        elif os.path.isdir(target):
+            success = compileall.compile_dir(target, force=True, quiet=2 if quiet else 0)
+            if not success:
+                raise RuntimeError("Bytecode compilation failed")
+            for root, dirs, files in os.walk(target):
+                if '__pycache__' in dirs:
+                    cache_dir = os.path.join(root, '__pycache__')
+                    rel_root = os.path.relpath(root, target)
+                    for f in os.listdir(cache_dir):
+                        if f.endswith('.pyc'):
+                            src = os.path.join(cache_dir, f)
+                            parts = f.rsplit('.', 2)
+                            simple_name = parts[0] + '.pyc'
+                            if rel_root == '.':
+                                dest = os.path.join(output_dir, simple_name)
+                            else:
+                                dest = os.path.join(output_dir, rel_root, simple_name)
+                            make_dirs(os.path.dirname(dest))
+                            shutil.copy(src, dest)
+                            compiled_files.append(dest)
+                            os.remove(src)
+                    try:
+                        os.rmdir(cache_dir)
+                    except OSError:
+                        pass
+        else:
+            raise FileNotFoundError(f"Target not found: {target}")
+
+    return compiled_files

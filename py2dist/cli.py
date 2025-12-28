@@ -2,18 +2,25 @@ import argparse
 import os
 import sys
 
-from .compiler import CompileOptions, Compiler, find_ccache, get_files_in_dir
+from .compiler import CompileOptions, Compiler, find_ccache, get_files_in_dir, compile_to_bytecode
 from . import __version__
 
 
 def parse_exclude_files(value: str, root_dir: str) -> list:
     exclude = []
+    root_dir_normalized = root_dir.replace('/', os.path.sep).replace('\\', os.path.sep)
+    root_prefix = root_dir_normalized + os.path.sep
     for path in value.split(","):
         path = path.strip()
         if not path:
             continue
-        if path.endswith('/') or path.endswith('\\'):
-            dir_path = path.rstrip('/').rstrip('\\')
+        path = path.replace('/', os.path.sep).replace('\\', os.path.sep)
+        if path.startswith(root_prefix):
+            path = path[len(root_prefix):]
+        elif path == root_dir_normalized:
+            continue
+        if path.endswith(os.path.sep):
+            dir_path = path.rstrip(os.path.sep)
             full_dir = os.path.join(root_dir, dir_path)
             if os.path.isdir(full_dir):
                 for f in get_files_in_dir(full_dir, True, 1):
@@ -38,12 +45,25 @@ def main():
     parser.add_argument("-q", "--quiet", action="store_true", help="Quiet mode")
     parser.add_argument("-r", "--release", action="store_true", help="Release mode (clean tmp files)")
     parser.add_argument("-c", "--ccache", dest="ccache", nargs="?", const="auto", default=None, help="Use ccache (auto-detect or specify path)")
+    parser.add_argument("-b", "--bytecode", dest="bytecode_target", help="Compile to .pyc using compileall (file or directory)")
 
     args = parser.parse_args()
 
-    if not args.source_file and not args.source_dir:
+    bytecode_target = args.bytecode_target
+
+    if not args.source_file and not args.source_dir and not bytecode_target:
         parser.print_help()
         sys.exit(1)
+
+    if not args.source_file and not args.source_dir:
+        try:
+            compiled = compile_to_bytecode(bytecode_target, args.output_dir, args.quiet)
+            if not args.quiet:
+                print(f"Compiled {len(compiled)} file(s) to bytecode in: {args.output_dir}")
+        except Exception as e:
+            print(f"Bytecode compilation error: {e}")
+            sys.exit(1)
+        sys.exit(0)
 
     if args.source_file and args.source_dir:
         print("Error: Cannot use both -f and -d")
@@ -85,6 +105,19 @@ def main():
     except Exception as e:
         print(f"Error: {e}")
         sys.exit(1)
+
+    if bytecode_target:
+        try:
+            target_in_output = os.path.join(args.output_dir, os.path.basename(bytecode_target.rstrip('/\\')))
+            if os.path.exists(target_in_output):
+                compiled = compile_to_bytecode(target_in_output, args.output_dir, args.quiet, in_place=True)
+            else:
+                compiled = compile_to_bytecode(bytecode_target, args.output_dir, args.quiet, in_place=False)
+            if not args.quiet:
+                print(f"Compiled {len(compiled)} file(s) to bytecode in: {args.output_dir}")
+        except Exception as e:
+            print(f"Bytecode compilation error: {e}")
+            sys.exit(1)
 
 
 if __name__ == "__main__":

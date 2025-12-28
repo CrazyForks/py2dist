@@ -8,6 +8,7 @@ py2dist 是一个使用 Cython 将 Python 源代码编译为二进制扩展模�
 
 - 支持 Linux、Mac、Windows 平台
 - 支持将单个 `.py` 文件或整个目录编译为二进制文件
+- 支持将额外的 `.py` 文件编译为 `.pyc` 字节码（用于无法被 Cython 编译的文件）
 - 保持目录结构，自动复制其他文件到输出目录
 - 支持排除指定文件或目录
 - 自动检测并使用 ccache 加速编译
@@ -170,11 +171,11 @@ make build
 /app/
 ├── run.py
 ├── server/
-│   ├── __init__.py
+│   ├── __init__.pyc
 │   ├── main.so
 │   ├── utils.so
 │   ├── router/
-│   │   ├── __init__.py
+│   │   ├── __init__.pyc
 │   │   └── user.so
 │   ├── static/
 │   │   └── image.png
@@ -247,6 +248,30 @@ tar -czvf myproject.tar.gz build
 - `-q, --quiet`: 安静模式
 - `-r, --release`: 发布模式 (清理临时构建文件)
 - `-c, --ccache`: 使用 ccache (默认自动检测，也可指定路径)
+- `-b, --bytecode`: 使用 compileall 将 `.py` 文件编译为 `.pyc` 字节码 (文件或目录)
+
+### 字节码编译 (-b)
+
+`-b` 选项将 Python 文件编译为 `.pyc` 字节码，而不是二进制 `.so`/`.pyd` 文件。适用于无法被 Cython 编译的文件。
+
+**注意：** `__init__.py` 文件默认会自动编译为 `.pyc`，无需使用 `-b` 参数。
+
+**使用场景：** 某些库如 `fastmcp` 会在运行时使用源文件信息（例如用于内省或文档生成）。这些文件无法编译为 `.so`，但可以使用 `-b` 选项编译为 `.pyc`。
+
+示例：
+
+```bash
+# 将单个文件编译为字节码
+python3 -m py2dist -b mymodule/mcp_server.py -o dist
+
+# 将目录编译为字节码
+python3 -m py2dist -b mymodule/mcp_server/ -o dist
+
+# 与 Cython 编译结合：大部分文件编译为 .so，MCP 服务文件编译为 .pyc
+python3 -m py2dist -d myproject -m "myproject/mcp_server/" -b myproject/mcp_server/ -o dist
+```
+
+当与 `-d` 一起使用时，`-b` 选项在 Cython 编译之后运行，将输出目录中指定的 `.py` 文件转换为 `.pyc`，并删除原始的 `.py` 文件。
 
 ### Python API
 
