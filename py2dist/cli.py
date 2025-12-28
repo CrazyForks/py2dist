@@ -108,7 +108,18 @@ def main():
 
     if bytecode_target:
         try:
-            target_in_output = os.path.join(args.output_dir, os.path.basename(bytecode_target.rstrip('/\\')))
+            target_in_output = None
+            if args.source_dir:
+                source_dir_abs = os.path.abspath(args.source_dir.rstrip('/\\'))
+                bytecode_abs = os.path.abspath(bytecode_target)
+                if bytecode_abs == source_dir_abs or bytecode_abs.startswith(source_dir_abs + os.path.sep):
+                    rel = os.path.relpath(bytecode_abs, source_dir_abs)
+                    if rel == ".":
+                        target_in_output = os.path.join(args.output_dir, os.path.basename(source_dir_abs))
+                    else:
+                        target_in_output = os.path.join(args.output_dir, os.path.basename(source_dir_abs), rel)
+            if not target_in_output:
+                target_in_output = os.path.join(args.output_dir, os.path.basename(bytecode_target.rstrip('/\\')))
             if os.path.exists(target_in_output):
                 compiled = compile_to_bytecode(target_in_output, args.output_dir, args.quiet, in_place=True)
             else:
