@@ -7,9 +7,10 @@ py2dist is a tool that uses Cython to compile Python source code into binary ext
 ## Features
 
 - Compile single `.py` files or entire directories into binary files.
-- Preserve directory structure.
+- Preserve directory structure, automatically copy other files to the output directory.
 - Support excluding specific files or directories.
 - Automatically detect and use `ccache` to accelerate compilation.
+- Get a small performance boost from Cython compilation.
 - Provide both CLI and Python API.
 
 ## Installation
