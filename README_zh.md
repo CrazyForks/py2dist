@@ -208,7 +208,7 @@ make compile
 mkdir -p build/lib
 cp -r dist/server build/server
 cp run.py build/run.py
-pip install -r requirements.txt --target "build/lib" --python-version "3.12" --only-binary=:all:
+pip install -r requirements.txt --target "./build/lib" --python-version "3.12" --only-binary=:all:
 tar -czvf myproject.tar.gz build
 ```
 
