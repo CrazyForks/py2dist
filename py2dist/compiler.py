@@ -171,10 +171,9 @@ class Compiler:
                 shutil.rmtree(folder_path)
 
     def _clear_tmp_files(self):
-        for folder in [".py2dist/build", ".py2dist/build_c"]:
-            folder_path = os.path.join(self._work_dir, folder)
-            if os.path.isdir(folder_path):
-                shutil.rmtree(folder_path)
+        folder_path = os.path.join(self._work_dir, ".py2dist")
+        if os.path.isdir(folder_path):
+            shutil.rmtree(folder_path)
 
     def _run_cython_build(self, script_path: str):
         build_dir = os.path.join(self._work_dir, ".py2dist/build")
