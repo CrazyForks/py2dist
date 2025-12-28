@@ -90,8 +90,35 @@ make build
 
 本项目使用 GitHub Actions 自动发布到 PyPI。
 
-1. 确保已配置 PyPI 的 Trusted Publishing 或 Secrets。
-2. 使用 `make release` 命令更新版本号并推送 tag：
+#### 配置 PyPI 认证
+
+你有两种方式配置 PyPI 认证：
+
+**方式一：Trusted Publishing (推荐)**
+
+无需长期密钥，更安全。
+1. 在 PyPI 上进入你的项目管理页面 (或者创建新项目)。
+2. 转到 **Publishing** 设置。
+3. 添加一个新的 **GitHub** publisher。
+4. 填写 Owner, Repository name, Workflow name (`publish.yml`), 和 Environment name (`pypi`)。
+
+**方式二：API Token**
+
+1. 在 PyPI 上生成一个 API Token。
+2. 在 GitHub 仓库的 **Settings** -> **Secrets and variables** -> **Actions** 中创建一个新的 Repository Secret。
+3. 名称为 `PYPI_PASSWORD`，值为你的 API Token。
+4. 修改 `.github/workflows/publish.yml`，在 `Publish to PyPI` 步骤中添加 `password` 参数：
+
+```yaml
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          password: ${{ secrets.PYPI_PASSWORD }}
+```
+
+#### 发布流程
+
+1. 使用 `make release` 命令更新版本号并推送 tag：
 
 ```bash
 make release v=0.1.1
