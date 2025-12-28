@@ -182,6 +182,9 @@ class Compiler:
 
         env = os.environ.copy()
         ccache_path = self.options.ccache
+        if not ccache_path:
+            ccache_path = find_ccache()
+        
         if ccache_path:
             env["CC"] = f"{ccache_path} {env.get('CC', 'gcc')}"
             env["CXX"] = f"{ccache_path} {env.get('CXX', 'g++')}"

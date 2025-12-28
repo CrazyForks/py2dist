@@ -3,8 +3,7 @@ import os
 import sys
 
 from .compiler import CompileOptions, Compiler, find_ccache, get_files_in_dir
-
-__version__ = "0.1.0"
+from . import __version__
 
 
 def parse_exclude_files(value: str, root_dir: str) -> list:

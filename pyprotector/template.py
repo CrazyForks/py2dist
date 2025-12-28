@@ -4,9 +4,6 @@ from setuptools import Extension, setup
 from Cython.Build import cythonize
 from Cython.Distutils import build_ext
 
-os.environ['CC'] = 'ccache gcc'
-os.environ['CXX'] = 'ccache g++'
-
 source_root = sys.argv[1]
 sys.argv = [sys.argv[0]] + sys.argv[2:]
 
