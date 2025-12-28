@@ -1,6 +1,6 @@
-# PyProtector
+# Py2Dist
 
-PyProtector 是一个使用 Cython 将 Python 源代码编译为二进制扩展模块（.so/.pyd）的工具，用于保护源代码。
+Py2Dist 是一个使用 Cython 将 Python 源代码编译为二进制扩展模块（.so/.pyd）的工具，用于保护源代码。
 
 ## 功能
 
@@ -13,7 +13,7 @@ PyProtector 是一个使用 Cython 将 Python 源代码编译为二进制扩展�
 ## 安装
 
 ```bash
-pip install pyprotector
+pip install py2dist
 ```
 
 ## 使用方法
@@ -22,12 +22,12 @@ pip install pyprotector
 
 编译单个文件：
 ```bash
-pyprotector -f myscript.py
+py2dist -f myscript.py
 ```
 
 编译整个目录：
 ```bash
-pyprotector -d myproject -o dist
+py2dist -d myproject -o dist
 ```
 
 参数说明：
@@ -43,7 +43,7 @@ pyprotector -d myproject -o dist
 ### Python API
 
 ```python
-from pyprotector import compile_file, compile_dir
+from py2dist import compile_file, compile_dir
 
 # 编译单个文件
 compile_file("myscript.py", output_dir="dist")

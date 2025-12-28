@@ -25,7 +25,7 @@ def parse_exclude_files(value: str, root_dir: str) -> list:
 
 def main():
     parser = argparse.ArgumentParser(
-        prog="pyprotector",
+        prog="py2dist",
         description="Compile Python files to .so/.pyd using Cython"
     )
     parser.add_argument("-v", "--version", action="version", version=f"%(prog)s {__version__}")

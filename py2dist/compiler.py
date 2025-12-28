@@ -6,7 +6,7 @@ import tempfile
 from dataclasses import dataclass, field
 from typing import Optional
 
-from pyprotector.template import BUILD_SCRIPT_TEMPLATE
+from py2dist.template import BUILD_SCRIPT_TEMPLATE
 
 
 @dataclass
@@ -153,7 +153,7 @@ class Compiler:
             self.options.nthread,
             self.options.quiet,
         )
-        script_dir = os.path.join(self._work_dir, ".pyprotector")
+        script_dir = os.path.join(self._work_dir, ".py2dist")
         make_dirs(script_dir)
         script_path = os.path.join(script_dir, "build.py")
         with open(script_path, "w") as f:
@@ -162,8 +162,8 @@ class Compiler:
 
     def _clear_build_folders(self):
         for folder in [
-            ".pyprotector/build",
-            ".pyprotector/build_c",
+            ".py2dist/build",
+            ".py2dist/build_c",
             self.options.output_dir,
         ]:
             folder_path = os.path.join(self._work_dir, folder)
@@ -171,14 +171,14 @@ class Compiler:
                 shutil.rmtree(folder_path)
 
     def _clear_tmp_files(self):
-        for folder in [".pyprotector/build", ".pyprotector/build_c"]:
+        for folder in [".py2dist/build", ".py2dist/build_c"]:
             folder_path = os.path.join(self._work_dir, folder)
             if os.path.isdir(folder_path):
                 shutil.rmtree(folder_path)
 
     def _run_cython_build(self, script_path: str):
-        build_dir = os.path.join(self._work_dir, ".pyprotector/build")
-        build_c_dir = os.path.join(self._work_dir, ".pyprotector/build_c")
+        build_dir = os.path.join(self._work_dir, ".py2dist/build")
+        build_c_dir = os.path.join(self._work_dir, ".py2dist/build_c")
         make_dirs(build_dir)
         make_dirs(build_c_dir)
 
@@ -213,7 +213,7 @@ class Compiler:
 
     def _collect_output(self, compile_files: list):
         output_dir = os.path.join(self._work_dir, self.options.output_dir)
-        build_dir = os.path.join(self._work_dir, ".pyprotector/build")
+        build_dir = os.path.join(self._work_dir, ".py2dist/build")
         make_dirs(output_dir)
 
         for file in get_files_in_dir(build_dir, True, 1, [".so", ".pyd"]):
